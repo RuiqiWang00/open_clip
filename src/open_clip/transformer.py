@@ -324,7 +324,7 @@ class Transformer(nn.Module):
                 x = r(x, attn_mask=attn_mask)
         return x
 
-
+from timm.layers import resample_abs_pos_embed
 class VisionTransformer(nn.Module):
     output_tokens: torch.jit.Final[bool]
 
@@ -501,13 +501,15 @@ class VisionTransformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
+        h,w=x.shape[-2],x.shape[-1]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
 
         # class embeddings and positional embeddings
         x = torch.cat([_expand_token(self.class_embedding, x.shape[0]).to(x.dtype), x], dim=1)
         # shape = [*, grid ** 2 + 1, width]
-        x = x + self.positional_embedding.to(x.dtype)
+        new_position_embedding=resample_abs_pos_embed(self.positional_embedding[None],[h,w],num_prefix_tokens=1)
+        x = x + new_position_embedding.to(x.dtype)
 
         x = self.patch_dropout(x)
         x = self.ln_pre(x)
