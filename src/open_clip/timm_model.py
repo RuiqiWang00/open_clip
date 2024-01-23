@@ -53,8 +53,6 @@ class TimmModel(nn.Module):
             timm_kwargs['drop_path_rate'] = drop_path
         if patch_drop is not None:
             timm_kwargs['patch_drop_rate'] = patch_drop
-        if image_size!=224:
-            timm_kwargs['img_size']=image_size
 
         custom_pool = pool in ('abs_attn', 'rot_attn')
         if proj:
